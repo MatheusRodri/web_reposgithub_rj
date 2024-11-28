@@ -1,13 +1,29 @@
 import { FaGithub, FaPlus, FaSpinner, FaBars, FaTrash } from "react-icons/fa";
 import { Container, Form, SubmitButton, List, DeleteButton } from "./styles";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../../services/api";
+import { Link } from "react-router-dom";
 
 export default function Main() {
 
     const [newRepo, setNewRepo] = useState('');
     const [repositories, setRepositories] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [alert, setAlert] = useState(null);
+
+    //DidMount
+    useEffect(() => {
+        const repo = localStorage.getItem('repositories');
+        if (repo) {
+            setRepositories(JSON.parse(repo));
+        }
+    }, []);
+
+    //DidUpdate
+
+    useEffect(() => {
+        localStorage.setItem('repositories', JSON.stringify(repositories));
+    }, [repositories]);
 
 
     const handleDelete = useCallback((repo) => {
@@ -20,16 +36,31 @@ export default function Main() {
         e.preventDefault();
         async function submit() {
             setLoading(true);
+            setAlert(null);
             try {
+
+                if (newRepo === '') {
+                    throw new Error('Você precisa indicar um repositório');
+                }
+
                 const response = await api.get(`/repos/${newRepo}`);
+
+                const hasRepo = repositories.find(repo => repo.name === newRepo);
+
+                if (hasRepo) {
+                    throw new Error('Repositório duplicado');
+                }
+
                 const data = {
                     name: response.data.full_name,
                 }
 
                 setRepositories([...repositories, data]);
                 setNewRepo('');
+
             } catch (error) {
-                console.log(error);
+                setAlert(true);
+                console.log(error.message);
             } finally {
                 setLoading(false);
             }
@@ -41,6 +72,7 @@ export default function Main() {
 
     function handleInputChange(e) {
         setNewRepo(e.target.value);
+        setAlert(null);
     }
 
     return (
@@ -50,7 +82,7 @@ export default function Main() {
                 Meus Repositórios
             </h1>
 
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={handleSubmit} error={alert} >
                 <input
                     type="text"
                     placeholder="Adicionar repositório"
@@ -77,9 +109,9 @@ export default function Main() {
                             </DeleteButton>
                             {repository.name}
                         </span>
-                        <a href="/">
+                        <Link to={`/repositorio/${encodeURIComponent(repository.name)}`}>
                             <FaBars size={20} />
-                        </a>
+                        </Link>
                     </li>
                 ))}
             </List>
