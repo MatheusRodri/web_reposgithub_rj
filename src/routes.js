@@ -9,7 +9,7 @@ export default function RoutesDom() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Main />} />
-                <Route path="/repositorio" element={<Repositorio />} />
+                <Route path="/repositorio/:repositorioParamName" element={<Repositorio />} />
             </Routes>
         </BrowserRouter>
     )
